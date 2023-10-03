@@ -3,8 +3,8 @@ import time
 import board
 import busio
 import adafruit_ssd1306
-import mfrc522
 import datetime
+import mfrc522
 
 # Connect the RFID reader to the Raspberry Pi
 GPIO.setmode(GPIO.BCM)
@@ -35,7 +35,29 @@ display = adafruit_ssd1306.SSD1306_I2C(128, 64, i2c)
 rc522 = mfrc522.MFRC522()
 
 # Connect to the database
-# ...
+# ... (Add your database connection logic here)
+
+# Define a function to read an RFID card
+def read_rfid_card():
+    while True:
+        # Scan for RFID cards
+        (status, tag_type) = rc522.request(rc522.REQIDL)
+
+        # If a card is detected, get its UID
+        if status == rc522.OK:
+            (status, uid) = rc522.anticoll()
+
+            # Combine the UID parts into a single integer
+            uid_int = uid[0] << 24 | uid[1] << 16 | uid[2] << 8 | uid[3]
+
+            # Wait for the card to be removed
+            rc522.select_tag(uid)
+            time.sleep(1)
+
+            return uid_int
+
+        # Wait for a short time before scanning again
+        time.sleep(0.2)
 
 # Define a function to check if a card is registered in the database
 def is_card_registered(uid):
@@ -43,7 +65,7 @@ def is_card_registered(uid):
     # ...
 
     # Return True if the card is registered, False otherwise
-    return ...
+    return True  # Replace with your logic
 
 # Define a function to update the attendance record for a user
 def update_attendance(uid):
@@ -59,22 +81,27 @@ def display_attendance_report():
     # ...
 
 # Start the main loop
-while True:
+try:
+    while True:
+        # Read an RFID card
+        uid = read_rfid_card()
 
-    # Read an RFID card
-    uid = read_rfid_card()
+        # If a card is read, check if it is registered in the database
+        if uid:
+            if is_card_registered(uid):
+                # Update the attendance record for the user
+                update_attendance(uid)
+            else:
+                # Display an error message on the LCD display
+                display.fill(0)
+                display.text('Card not registered', 0, 0, 1)
+                display.show()
+                time.sleep(2)
 
-    # If a card is read, check if it is registered in the database
-    if uid:
-        if is_card_registered(uid):
-            # Update the attendance record for the user
-            update_attendance(uid)
-        else:
-            # Display an error message on the LCD display
-            display.clear()
-            display.text('Card not registered', 0, 0, 1)
-            display.show()
-            time.sleep(2)
+        # Wait for 1 second
+        time.sleep(1)
 
-    # Wait for 1 second
-    time.sleep(1)
+except KeyboardInterrupt:
+    GPIO.cleanup()
+    display.fill(0)
+    display.show()
