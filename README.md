@@ -1,3 +1,3 @@
-This is python3 code which I intregreated arduino to make working RFID attendance system as my college IOT project. 
-My professor has helped me to write this code
+This is python code which I intregreated in arduino to make working simple RFID attendance systeme IOT project. 
+
 Xampp has been used to host database
